@@ -1,0 +1,23 @@
+{
+  "resource": "bdtopo-osrm",
+  "resourceVersion": "2026-08-25",
+  "start": "2.349,48.853",
+  "end": "2.35,48.854",
+  "profile": "pedestrian",
+  "optimization": "fastest",
+  "crs": "EPSG:4326",
+  "distanceUnit": "meter",
+  "timeUnit": "second",
+  "bbox": [2.349, 48.853, 2.35, 48.854],
+  "distance": 180.5,
+  "duration": 150.2,
+  "geometry": {
+    "type": "LineString",
+    "coordinates": [
+      [2.349, 48.853],
+      [2.3495, 48.8535],
+      [2.35, 48.854]
+    ]
+  },
+  "constraints": []
+}

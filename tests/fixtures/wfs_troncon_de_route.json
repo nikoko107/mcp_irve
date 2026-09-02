@@ -1,0 +1,42 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "troncon_de_route.111",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.349, 48.853, 35.0],
+          [2.3495, 48.8535, 35.1]
+        ]
+      },
+      "geometry_name": "geometrie",
+      "properties": {
+        "cleabs": "TRONROUT0000000001",
+        "nature": "Route à 1 chaussée",
+        "importance": "4"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "troncon_de_route.112",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3505, 48.8545, 36.0],
+          [2.351, 48.855, 36.2]
+        ]
+      },
+      "geometry_name": "geometrie",
+      "properties": {
+        "cleabs": "TRONROUT0000000002",
+        "nature": "Chemin",
+        "importance": "5"
+      }
+    }
+  ],
+  "totalFeatures": 2,
+  "numberMatched": 2,
+  "numberReturned": 2
+}

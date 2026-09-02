@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Carte de raccordement IRVE — {{ adresse | e }}</title>
+<script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css">
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+  #map { width: 100%; height: 100vh; background: #eef1f4; }
+  #legend {
+    position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,.95);
+    padding: 12px 14px; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,.3);
+    font-size: 13px; z-index: 10; max-width: 260px;
+  }
+  #legend div.entry { margin: 4px 0; }
+  .swatch { display: inline-block; width: 18px; margin-right: 6px; vertical-align: middle; }
+  .swatch-area { height: 12px; border-radius: 2px; }
+  .swatch-line { height: 0; border-top-width: 3px; border-top-style: solid; }
+  .swatch-line-dashed { height: 0; border-top-width: 3px; border-top-style: dashed; }
+  .swatch-dot { width: 12px; height: 12px; border-radius: 50%; }
+  #legend .statut { margin-top: 8px; font-weight: 600; }
+  #legend .statut-reseau-direct { margin-top: 8px; font-size: 11px; color: #1a73e8; font-style: italic; }
+  #legend .avertissement { margin-top: 8px; font-size: 11px; color: #555; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="legend">
+  <strong>{{ adresse | e }}</strong><br>
+  <div class="entry"><span class="swatch swatch-area" style="background:rgba(26,115,232,.18); border:1px dashed #1a73e8"></span>Zone tampon d'accessibilité</div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:#0d47a1"></span>Réseau BT aérien <em>(en direct)</em></div>
+  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:#0d47a1"></span>Réseau BT souterrain <em>(en direct)</em></div>
+  <div class="entry"><span class="swatch swatch-dot" style="background:#ef6c00"></span>Poste de distribution « P » <em>(en direct)</em></div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:#999999"></span>Routes / chemins</div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:#1a73e8"></span>Candidats accessibles</div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:#d32f2f; border-top-width:4px"></span>Tronçon retenu</div>
+  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:#7b1fa2"></span>Itinéraire routier (tracé projeté)</div>
+  <div class="entry"><span class="swatch swatch-dot" style="background:#000000"></span>Point d'analyse</div>
+  <div class="entry"><span class="swatch swatch-dot" style="background:#d32f2f"></span>Point de raccordement</div>
+  {% if eligible is not none %}
+  <div class="statut">{% if eligible %}✅ Éligible{% else %}❌ Non éligible{% endif %} — {{ distance_routiere_m }} m (seuil {{ seuil_m }} m)</div>
+  {% endif %}
+  <div id="statut-reseau-direct" class="statut-reseau-direct"></div>
+  <div class="avertissement">Réseau BT et postes Enedis déclaratifs, non garantis exhaustifs — rechargés en direct depuis l'API Enedis à chaque déplacement de la carte, dans un rayon limité autour du centre de la vue. Distance routière ≠ tracé de tranchée réel. Fond de plan : orthophoto IGN (BD ORTHO®).</div>
+</div>
+<script>
+proj4.defs("EPSG:2154", "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+ol.proj.proj4.register(proj4);
+
+const geojson = {{ geojson_str }};
+
+const styleByLayer = {
+  buffer: new ol.style.Style({
+    fill: new ol.style.Fill({ color: 'rgba(26, 115, 232, 0.18)' }),
+    stroke: new ol.style.Stroke({ color: '#1a73e8', width: 1, lineDash: [4, 4] }),
+  }),
+  bt_aerien: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#0d47a1', width: 3 }) }),
+  bt_souterrain: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#0d47a1', width: 3, lineDash: [6, 4] }) }),
+  routes: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#999999', width: 1.5 }) }),
+  candidats: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#1a73e8', width: 3 }) }),
+  resultat: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#d32f2f', width: 5 }) }),
+  // "tracé projeté" (itinéraire routier calculé) : violet tireté, distinct du bleu du
+  // réseau BT et du rouge du tronçon retenu.
+  itineraire: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#7b1fa2', width: 3, lineDash: [2, 6] }) }),
+  depart: new ol.style.Style({
+    image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#000000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
+  }),
+  point_raccordement: new ol.style.Style({
+    image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#d32f2f' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
+  }),
+  // Poste de distribution : petit rond orange avec la lettre "P" — distinct du bleu du
+  // réseau et du violet de l'itinéraire.
+  poste: new ol.style.Style({
+    image: new ol.style.Circle({
+      radius: 8,
+      fill: new ol.style.Fill({ color: '#ef6c00' }),
+      stroke: new ol.style.Stroke({ color: '#fff', width: 1.5 }),
+    }),
+    text: new ol.style.Text({
+      text: 'P',
+      font: 'bold 10px system-ui, sans-serif',
+      fill: new ol.style.Fill({ color: '#ffffff' }),
+    }),
+  }),
+};
+
+function styleFunction(feature) {
+  const layer = feature.get('layer');
+  return styleByLayer[layer] || new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#333333', width: 1 }) });
+}
+
+const source = new ol.source.Vector({
+  features: new ol.format.GeoJSON().readFeatures(geojson, {
+    dataProjection: 'EPSG:4326',
+    featureProjection: 'EPSG:2154',
+  }),
+});
+
+const vectorLayer = new ol.layer.Vector({ source: source, style: styleFunction });
+
+// --- Réseau BT + postes de distribution en direct depuis l'API Enedis (Opendatasoft) ---
+// Contrairement aux autres couches (embarquées, figées au moment de l'analyse), celle-ci
+// est rechargée à chaque déplacement de la carte, dans un rayon calculé autour du centre
+// de la vue courante — donc pas limitée au rayon_recherche_m de l'analyse d'origine.
+const ENEDIS_BASE_URL = "{{ enedis_base_url }}";
+const ENEDIS_DATASET_AERIEN = "{{ enedis_dataset_aerien }}";
+const ENEDIS_DATASET_SOUTERRAIN = "{{ enedis_dataset_souterrain }}";
+const ENEDIS_DATASET_POSTE = "{{ enedis_dataset_poste }}";
+const RAYON_MAX_RESEAU_DIRECT_M = 1500; // au-delà, la zone est trop vaste pour un chargement fluide
+// L'API Enedis (Opendatasoft) plafonne "limit" à 100 (une valeur supérieure renvoie
+// une erreur HTTP 400) — vérifié en direct, ce n'est pas un choix arbitraire. Pas de
+// pagination côté navigateur : au-delà de 100 tronçons/postes par jeu de données dans
+// la vue courante, l'affichage reste "best effort", pas exhaustif.
+const NB_MAX_ENREGISTREMENTS = 100;
+
+const liveReseauSource = new ol.source.Vector();
+const livePosteSource = new ol.source.Vector();
+const liveReseauLayer = new ol.layer.Vector({ source: liveReseauSource, style: styleFunction });
+const livePosteLayer = new ol.layer.Vector({ source: livePosteSource, style: styleFunction });
+const statutReseauDirectEl = document.getElementById('statut-reseau-direct');
+
+async function chargerJeuDeDonneesEnedis(datasetId, lon, lat, rayonM) {
+  const where = encodeURIComponent(`within_distance(geometry, geom'POINT(${lon} ${lat})', ${rayonM}m)`);
+  const url = `${ENEDIS_BASE_URL}/${datasetId}/records?where=${where}&limit=${NB_MAX_ENREGISTREMENTS}`;
+  const reponse = await fetch(url);
+  if (!reponse.ok) {
+    throw new Error(`API Enedis (${datasetId}) : HTTP ${reponse.status}`);
+  }
+  const donnees = await reponse.json();
+  return donnees.results || [];
+}
+
+function enregistrementsEnedisVersFeatures(enregistrements, nomCouche) {
+  const lecteurGeoJSON = new ol.format.GeoJSON();
+  const features = [];
+  for (const enregistrement of enregistrements) {
+    if (!enregistrement.geometry) continue;
+    const geometrie =
+      typeof enregistrement.geometry === 'string'
+        ? JSON.parse(enregistrement.geometry)
+        : enregistrement.geometry;
+    const feature = lecteurGeoJSON.readFeature(
+      { type: 'Feature', geometry: geometrie, properties: {} },
+      { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:2154' }
+    );
+    feature.set('layer', nomCouche);
+    features.push(feature);
+  }
+  return features;
+}
+
+let jetonRequeteReseauDirect = 0;
+
+async function chargerReseauEnDirect() {
+  const jeton = ++jetonRequeteReseauDirect;
+  const vue = map.getView().calculateExtent(map.getSize());
+  const rayonM = Math.sqrt(((vue[2] - vue[0]) / 2) ** 2 + ((vue[3] - vue[1]) / 2) ** 2);
+
+  if (rayonM > RAYON_MAX_RESEAU_DIRECT_M) {
+    liveReseauSource.clear();
+    livePosteSource.clear();
+    if (statutReseauDirectEl) {
+      statutReseauDirectEl.textContent = 'Zoomez pour charger le réseau en direct.';
+    }
+    return;
+  }
+
+  const centre = ol.extent.getCenter(vue);
+  const [lon, lat] = proj4('EPSG:2154', 'WGS84', centre);
+
+  if (statutReseauDirectEl) statutReseauDirectEl.textContent = 'Chargement du réseau en direct…';
+  try {
+    const [aeriens, souterrains, postes] = await Promise.all([
+      chargerJeuDeDonneesEnedis(ENEDIS_DATASET_AERIEN, lon, lat, rayonM),
+      chargerJeuDeDonneesEnedis(ENEDIS_DATASET_SOUTERRAIN, lon, lat, rayonM),
+      chargerJeuDeDonneesEnedis(ENEDIS_DATASET_POSTE, lon, lat, rayonM),
+    ]);
+    if (jeton !== jetonRequeteReseauDirect) return; // une requête plus récente a déjà été lancée
+
+    liveReseauSource.clear();
+    liveReseauSource.addFeatures(enregistrementsEnedisVersFeatures(aeriens, 'bt_aerien'));
+    liveReseauSource.addFeatures(enregistrementsEnedisVersFeatures(souterrains, 'bt_souterrain'));
+    livePosteSource.clear();
+    livePosteSource.addFeatures(enregistrementsEnedisVersFeatures(postes, 'poste'));
+
+    if (statutReseauDirectEl) {
+      const nbTroncons = aeriens.length + souterrains.length;
+      statutReseauDirectEl.textContent =
+        `Réseau en direct : ${nbTroncons} tronçon(s) BT, ${postes.length} poste(s) (rayon ${Math.round(rayonM)} m).`;
+    }
+  } catch (erreur) {
+    if (jeton !== jetonRequeteReseauDirect) return;
+    if (statutReseauDirectEl) {
+      statutReseauDirectEl.textContent = 'Réseau en direct indisponible (hors ligne ?).';
+    }
+    console.error('Échec du chargement du réseau Enedis en direct :', erreur);
+  }
+}
+
+// Fond orthophoto IGN (BD ORTHO®), servi en Web Mercator (EPSG:3857) — le
+// Géoplateforme ne propose pas ce flux en Lambert 93. La vue de la carte reste en
+// EPSG:2154 : OpenLayers reprojette les tuiles à la volée (ol/reproj), transparent
+// tant que les deux projections sont enregistrées (EPSG:3857 nativement, EPSG:2154
+// via proj4 ci-dessus).
+const orthophotoLayer = new ol.layer.Tile({
+  source: new ol.source.XYZ({
+    url: 'https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg',
+    projection: 'EPSG:3857',
+    maxZoom: 19,
+    attributions: '<a href="https://www.ign.fr" target="_blank" rel="noopener">IGN-F/Géoplateforme</a>',
+  }),
+});
+
+const map = new ol.Map({
+  target: 'map',
+  layers: [orthophotoLayer, liveReseauLayer, vectorLayer, livePosteLayer],
+  view: new ol.View({ projection: 'EPSG:2154', zoom: 17 }),
+});
+
+const extent = source.getExtent();
+if (isFinite(extent[0])) {
+  map.getView().fit(extent, { padding: [40, 260, 40, 40], maxZoom: 19 });
+}
+
+// Réseau BT + postes en direct : chargement initial, puis rechargement (avec un
+// léger anti-rebond) à chaque déplacement/zoom de la carte.
+let debounceReseauDirect = null;
+map.on('moveend', () => {
+  clearTimeout(debounceReseauDirect);
+  debounceReseauDirect = setTimeout(chargerReseauEnDirect, 400);
+});
+chargerReseauEnDirect();
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "total_count": 2,
+  "results": [
+    {
+      "code_departement": "75",
+      "nom_region": "Île-de-France",
+      "code_region": "11",
+      "nom_iris": "Test IRIS Aerien",
+      "nom_commune": "Paris",
+      "nom_departement": "Paris",
+      "geometry": "{\"type\":\"LineString\",\"coordinates\":[[2.349,48.853],[2.3495,48.8535]]}",
+      "code_iris": "751010101",
+      "nom_epci": "Métropole du Grand Paris",
+      "code_commune": "75101",
+      "code_epci": "200054781"
+    },
+    {
+      "code_departement": "75",
+      "nom_region": "Île-de-France",
+      "code_region": "11",
+      "nom_iris": "Test IRIS Aerien 2",
+      "nom_commune": "Paris",
+      "nom_departement": "Paris",
+      "geometry": "{\"type\":\"LineString\",\"coordinates\":[[2.35,48.854],[2.3505,48.8545]]}",
+      "code_iris": "751010102",
+      "nom_epci": "Métropole du Grand Paris",
+      "code_commune": "75101",
+      "code_epci": "200054781"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "total_count": 1,
+  "results": [
+    {
+      "code_departement": "75",
+      "nom_region": "Île-de-France",
+      "code_region": "11",
+      "nom_iris": "Test IRIS Souterrain",
+      "nom_commune": "Paris",
+      "nom_departement": "Paris",
+      "geometry": "{\"type\":\"LineString\",\"coordinates\":[[2.3492,48.8536],[2.3497,48.854]]}",
+      "code_iris": "751010103",
+      "nom_epci": "Métropole du Grand Paris",
+      "code_commune": "75101",
+      "code_epci": "200054781"
+    }
+  ]
+}

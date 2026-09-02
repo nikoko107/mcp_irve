@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv/
+.python-version
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+output/*
+!output/.gitkeep
+
+# Claude Code : réglages et état locaux à la machine — .claude/agents/ (sous-agents du
+# projet, ex. test-runner) reste versionné, seuls ces fichiers générés/machine-spécifiques
+# sont ignorés.
+.claude/settings.local.json
+.claude/*.local.json

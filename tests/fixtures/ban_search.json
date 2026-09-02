@@ -1,0 +1,27 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.3492, 48.8534] },
+      "properties": {
+        "label": "1 Rue de Rivoli 75001 Paris",
+        "score": 0.85,
+        "housenumber": "1",
+        "id": "75101_1234_00001",
+        "banId": "abcd-1234",
+        "name": "1 Rue de Rivoli",
+        "postcode": "75001",
+        "citycode": "75101",
+        "x": 651500.12,
+        "y": 6862300.45,
+        "city": "Paris",
+        "context": "75, Paris, Île-de-France",
+        "type": "housenumber",
+        "importance": 0.7,
+        "_type": "address"
+      }
+    }
+  ],
+  "query": "1 rue de rivoli paris"
+}
