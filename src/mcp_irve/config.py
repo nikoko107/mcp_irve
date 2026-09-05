@@ -81,6 +81,10 @@ class Settings:
     interdits, voies rapides) qui n'ont pas de sens pour approximer un tracé de tranchée."""
     geopf_itineraire_optimization: str = "fastest"
     geopf_itineraire_rate_limit_per_s: float = 4.5  # limite documentée : 5 req/s/IP
+    repartition_type_tolerance_m: float = 2.0
+    """Tolérance de rapprochement géométrique entre la géométrie de l'itinéraire routé
+    et les tronçons du réseau routier récupéré, pour répartir la distance routière par
+    type de voie — voir geo/itineraire.py::repartir_longueur_par_type."""
 
     # --- HTTP ---
     http_timeout_s: float = field(

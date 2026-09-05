@@ -20,6 +20,7 @@ from .clients import geoplateforme as geoplateforme_client
 from .config import SETTINGS
 from .errors import MCPIrveError
 from .geo import accessibility, candidates, parsing
+from .geo import itineraire as itineraire_geo
 from .geo.projections import l93_to_wgs84, to_point_geo
 from .models import PointGeo, Resultat
 from .outputs import geojson_export, pdf_report
@@ -129,6 +130,14 @@ async def selectionner_meilleur_candidat(
         )
         eligible = best_candidate.distance_routiere_m <= SETTINGS.seuil_eligibilite_m
 
+        repartition_type_m: dict[str, float] = {}
+        if best_itineraire.geometry is not None:
+            repartition_type_m = itineraire_geo.repartir_longueur_par_type(
+                best_itineraire.geometry,
+                state.reseau_routier,
+                SETTINGS.repartition_type_tolerance_m,
+            )
+
         state.resultat = Resultat(
             troncon_id=best_candidate.candidate.source_troncon_id,
             type=best_candidate.candidate.type,
@@ -138,6 +147,7 @@ async def selectionner_meilleur_candidat(
             eligible=eligible,
             candidat=best_candidate.candidate,
             itineraire=best_itineraire,
+            repartition_type_m=repartition_type_m,
         )
         state.stage = max(state.stage, Stage.RESULTAT)
 
@@ -149,6 +159,7 @@ async def selectionner_meilleur_candidat(
         "distance_routiere_m": round(resultat.distance_routiere_m, 1),
         "point_raccordement": {"lat": point_raccordement.lat, "lon": point_raccordement.lon},
         "eligible": eligible,
+        "repartition_type_m": {k: round(v, 1) for k, v in resultat.repartition_type_m.items()},
     }
 
 

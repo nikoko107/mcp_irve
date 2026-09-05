@@ -35,12 +35,18 @@ def generer_carte_html(state: SessionState) -> Path:
 
     resultat = state.resultat
     distance_routiere_m = round(resultat.distance_routiere_m, 1) if resultat is not None else None
+    repartition_type_m = (
+        {k: round(v, 1) for k, v in resultat.repartition_type_m.items()}
+        if resultat is not None
+        else {}
+    )
     template = _env.get_template("map.html.j2")
     html = template.render(
         adresse=state.adresse_normalisee or "",
         geojson_str=geojson_str,
         eligible=resultat.eligible if resultat is not None else None,
         distance_routiere_m=distance_routiere_m,
+        repartition_type_m=repartition_type_m,
         seuil_m=SETTINGS.seuil_eligibilite_m,
         enedis_base_url=SETTINGS.enedis_base_url,
         enedis_dataset_aerien=SETTINGS.enedis_dataset_aerien,

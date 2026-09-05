@@ -112,7 +112,12 @@ def construire_features(
                 _feature(
                     resultat.itineraire.geometry,
                     "itineraire",
-                    {"distance_m": round(resultat.itineraire.distance_m, 1)},
+                    {
+                        "distance_m": round(resultat.itineraire.distance_m, 1),
+                        "repartition_type_m": {
+                            k: round(v, 1) for k, v in resultat.repartition_type_m.items()
+                        },
+                    },
                 )
             )
 

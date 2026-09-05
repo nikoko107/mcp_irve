@@ -21,6 +21,8 @@
   .swatch-line-dashed { height: 0; border-top-width: 3px; border-top-style: dashed; }
   .swatch-dot { width: 12px; height: 12px; border-radius: 50%; }
   #legend .statut { margin-top: 8px; font-weight: 600; }
+  #legend .repartition { margin-top: 6px; font-size: 12px; }
+  #legend .repartition ul { margin: 2px 0 0; padding-left: 18px; }
   #legend .statut-reseau-direct { margin-top: 8px; font-size: 11px; color: #1a73e8; font-style: italic; }
   #legend .avertissement { margin-top: 8px; font-size: 11px; color: #555; }
 </style>
@@ -41,6 +43,16 @@
   <div class="entry"><span class="swatch swatch-dot" style="background:#d32f2f"></span>Point de raccordement</div>
   {% if eligible is not none %}
   <div class="statut">{% if eligible %}✅ Éligible{% else %}❌ Non éligible{% endif %} — {{ distance_routiere_m }} m (seuil {{ seuil_m }} m)</div>
+  {% endif %}
+  {% if repartition_type_m %}
+  <div class="repartition">
+    <strong>Par type de voie :</strong>
+    <ul>
+    {% for type_voie, longueur_m in repartition_type_m.items() %}
+      <li>{{ type_voie | e }} : {{ longueur_m }} m</li>
+    {% endfor %}
+    </ul>
+  </div>
   {% endif %}
   <div id="statut-reseau-direct" class="statut-reseau-direct"></div>
   <div class="avertissement">Réseau BT et postes Enedis déclaratifs, non garantis exhaustifs — rechargés en direct depuis l'API Enedis à chaque déplacement de la carte, dans un rayon limité autour du centre de la vue. Distance routière ≠ tracé de tranchée réel. Fond de plan : orthophoto IGN (BD ORTHO®).</div>

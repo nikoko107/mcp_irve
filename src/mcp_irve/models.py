@@ -90,3 +90,7 @@ class Resultat:
     eligible: bool
     candidat: CandidateSegment
     itineraire: Itineraire | None = None
+    repartition_type_m: dict[str, float] = field(default_factory=dict)
+    """Longueur de l'itinéraire (mètres) par nature de voie traversée — voir
+    geo/itineraire.py::repartir_longueur_par_type. Vide si l'itinéraire n'a pas de
+    géométrie exploitable."""

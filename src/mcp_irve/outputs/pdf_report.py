@@ -111,6 +111,23 @@ def generer_rapport_pdf(state: SessionState) -> Path:
             label_style,
             value_style,
         ),
+    ]
+
+    if resultat.repartition_type_m:
+        elements += [
+            Spacer(1, 0.4 * cm),
+            Paragraph("Distance routière par type de voie", h2),
+            _table(
+                [
+                    [type_voie, f"{longueur:.1f} m"]
+                    for type_voie, longueur in resultat.repartition_type_m.items()
+                ],
+                label_style,
+                value_style,
+            ),
+        ]
+
+    elements += [
         Spacer(1, 0.5 * cm),
         Paragraph("Limites et fiabilité", h2),
     ]
