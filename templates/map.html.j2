@@ -7,6 +7,19 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css">
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
 <style>
+  /* Palette catégorielle validée (contraste + séparation daltonisme, ΔE OKLab) pour les
+     tracés de la carte — mêmes teintes reprises côté JS (styleByLayer) pour dessiner les
+     features OpenLayers, dupliquées ici faute d'accès direct de JS aux custom properties
+     CSS sans code additionnel. Ne pas modifier un côté sans l'autre. */
+  :root {
+    --c-bt: #2a78d6;          /* réseau BT (aérien plein, souterrain tireté) */
+    --c-zone: #898781;        /* zone tampon d'accessibilité — gris neutre, pas une teinte de donnée */
+    --c-routes: #595959;      /* réseau routier de contexte */
+    --c-candidats: #008300;   /* tronçons candidats accessibles */
+    --c-resultat: #e34948;    /* tronçon retenu + point de raccordement */
+    --c-itineraire: #4a3aa7;  /* itinéraire routier calculé (tracé projeté) */
+    --c-poste: #eb6834;       /* poste de distribution */
+  }
   html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
   #map { width: 100%; height: 100vh; background: #eef1f4; }
   #legend {
@@ -23,7 +36,7 @@
   #legend .statut { margin-top: 8px; font-weight: 600; }
   #legend .repartition { margin-top: 6px; font-size: 12px; }
   #legend .repartition ul { margin: 2px 0 0; padding-left: 18px; }
-  #legend .statut-reseau-direct { margin-top: 8px; font-size: 11px; color: #1a73e8; font-style: italic; }
+  #legend .statut-reseau-direct { margin-top: 8px; font-size: 11px; color: var(--c-bt); font-style: italic; }
   #legend .avertissement { margin-top: 8px; font-size: 11px; color: #555; }
 </style>
 </head>
@@ -31,16 +44,16 @@
 <div id="map"></div>
 <div id="legend">
   <strong>{{ adresse | e }}</strong><br>
-  <div class="entry"><span class="swatch swatch-area" style="background:rgba(26,115,232,.18); border:1px dashed #1a73e8"></span>Zone tampon d'accessibilité</div>
-  <div class="entry"><span class="swatch swatch-line" style="border-color:#0d47a1"></span>Réseau BT aérien <em>(en direct)</em></div>
-  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:#0d47a1"></span>Réseau BT souterrain <em>(en direct)</em></div>
-  <div class="entry"><span class="swatch swatch-dot" style="background:#ef6c00"></span>Poste de distribution « P » <em>(en direct)</em></div>
-  <div class="entry"><span class="swatch swatch-line" style="border-color:#999999"></span>Routes / chemins</div>
-  <div class="entry"><span class="swatch swatch-line" style="border-color:#1a73e8"></span>Candidats accessibles</div>
-  <div class="entry"><span class="swatch swatch-line" style="border-color:#d32f2f; border-top-width:4px"></span>Tronçon retenu</div>
-  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:#7b1fa2"></span>Itinéraire routier (tracé projeté)</div>
+  <div class="entry"><span class="swatch swatch-area" style="background:rgba(137,135,129,.16); border:1px dashed var(--c-zone)"></span>Zone tampon d'accessibilité</div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-bt)"></span>Réseau BT aérien <em>(en direct)</em></div>
+  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-bt)"></span>Réseau BT souterrain <em>(en direct)</em></div>
+  <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-poste)"></span>Poste de distribution « P » <em>(en direct)</em></div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-routes)"></span>Routes / chemins</div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-candidats)"></span>Candidats accessibles</div>
+  <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-resultat); border-top-width:4px"></span>Tronçon retenu</div>
+  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-itineraire)"></span>Itinéraire routier (tracé projeté)</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:#000000"></span>Point d'analyse</div>
-  <div class="entry"><span class="swatch swatch-dot" style="background:#d32f2f"></span>Point de raccordement</div>
+  <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-resultat)"></span>Point de raccordement</div>
   {% if eligible is not none %}
   <div class="statut">{% if eligible %}✅ Éligible{% else %}❌ Non éligible{% endif %} — {{ distance_routiere_m }} m (seuil {{ seuil_m }} m)</div>
   {% endif %}
@@ -61,33 +74,49 @@
 proj4.defs("EPSG:2154", "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 ol.proj.proj4.register(proj4);
 
+// Doit rester synchronisé avec les custom properties --c-* de la feuille de style
+// (:root ci-dessus) : même palette catégorielle, dupliquée ici faute d'accès direct
+// de ce script aux variables CSS sans code additionnel. Teintes choisies et validées
+// (séparation daltonisme ΔE OKLab, contraste) pour rester distinguables entre elles :
+// bleu (réseau BT, la référence), vert (candidats), violet (itinéraire calculé),
+// rouge (tronçon retenu — l'entité la plus importante, distinguée aussi par une
+// épaisseur de trait supérieure). Le réseau routier de contexte et la zone tampon
+// restent en gris neutre, hors palette de données, pour ne pas rivaliser avec elles.
+const COULEUR_BT = '#2a78d6';
+const COULEUR_ZONE = '#898781';
+const COULEUR_ROUTES = '#595959';
+const COULEUR_CANDIDATS = '#008300';
+const COULEUR_RESULTAT = '#e34948';
+const COULEUR_ITINERAIRE = '#4a3aa7';
+const COULEUR_POSTE = '#eb6834';
+
 const geojson = {{ geojson_str }};
 
 const styleByLayer = {
   buffer: new ol.style.Style({
-    fill: new ol.style.Fill({ color: 'rgba(26, 115, 232, 0.18)' }),
-    stroke: new ol.style.Stroke({ color: '#1a73e8', width: 1, lineDash: [4, 4] }),
+    fill: new ol.style.Fill({ color: 'rgba(137, 135, 129, 0.16)' }),
+    stroke: new ol.style.Stroke({ color: COULEUR_ZONE, width: 1, lineDash: [4, 4] }),
   }),
-  bt_aerien: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#0d47a1', width: 3 }) }),
-  bt_souterrain: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#0d47a1', width: 3, lineDash: [6, 4] }) }),
-  routes: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#999999', width: 1.5 }) }),
-  candidats: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#1a73e8', width: 3 }) }),
-  resultat: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#d32f2f', width: 5 }) }),
+  bt_aerien: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_BT, width: 3 }) }),
+  bt_souterrain: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_BT, width: 3, lineDash: [6, 4] }) }),
+  routes: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ROUTES, width: 1.5 }) }),
+  candidats: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_CANDIDATS, width: 3 }) }),
+  resultat: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_RESULTAT, width: 5 }) }),
   // "tracé projeté" (itinéraire routier calculé) : violet tireté, distinct du bleu du
   // réseau BT et du rouge du tronçon retenu.
-  itineraire: new ol.style.Style({ stroke: new ol.style.Stroke({ color: '#7b1fa2', width: 3, lineDash: [2, 6] }) }),
+  itineraire: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ITINERAIRE, width: 3, lineDash: [2, 6] }) }),
   depart: new ol.style.Style({
     image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#000000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
   }),
   point_raccordement: new ol.style.Style({
-    image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#d32f2f' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
+    image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: COULEUR_RESULTAT }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
   }),
   // Poste de distribution : petit rond orange avec la lettre "P" — distinct du bleu du
   // réseau et du violet de l'itinéraire.
   poste: new ol.style.Style({
     image: new ol.style.Circle({
       radius: 8,
-      fill: new ol.style.Fill({ color: '#ef6c00' }),
+      fill: new ol.style.Fill({ color: COULEUR_POSTE }),
       stroke: new ol.style.Stroke({ color: '#fff', width: 1.5 }),
     }),
     text: new ol.style.Text({
