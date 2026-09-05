@@ -14,7 +14,10 @@ assert "s'applique à la distance routière" in MISES_EN_GARDE[2]
 SOUS_CHAINES_ATTENDUES = [
     "données réseau BT Enedis",
     "approximation de la distance de",
-    "s'applique à la distance routière",
+    # La 3e mise en garde est repliée par pdfplumber juste après "s'applique à"
+    # (largeur de colonne) : on vérifie la portion qui suit le repli, toujours
+    # distinctive et alignée avec l'assertion de module sur MISES_EN_GARDE[2].
+    "la distance routière, pas à la distance à vol d'oiseau",
 ]
 
 
@@ -40,8 +43,8 @@ def test_pdf_affiche_ladresse_et_le_statut_eligible(patch_output_dir):
     texte = _extract_text(chemin)
 
     assert state.adresse_normalisee in texte
-    assert "ÉLIGIBLE" in texte
-    assert "NON ÉLIGIBLE" not in texte
+    assert "DANS LE PÉRIMÈTRE D'ANALYSE" in texte
+    assert "HORS PÉRIMÈTRE D'ANALYSE" not in texte
 
 
 def test_pdf_affiche_le_statut_non_eligible(patch_output_dir):
@@ -50,7 +53,7 @@ def test_pdf_affiche_le_statut_non_eligible(patch_output_dir):
     chemin = pdf_report.generer_rapport_pdf(state)
     texte = _extract_text(chemin)
 
-    assert "NON ÉLIGIBLE" in texte
+    assert "HORS PÉRIMÈTRE D'ANALYSE" in texte
 
 
 def test_pdf_affiche_les_distances_arrondies(patch_output_dir):

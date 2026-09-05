@@ -134,6 +134,6 @@ def test_export_proprietes_resultat_portent_les_bonnes_valeurs(patch_output_dir)
     data = json.loads(chemin.read_text())
 
     resultat_feature = next(f for f in data["features"] if f["properties"]["layer"] == "resultat")
-    assert resultat_feature["properties"]["eligible"] is False
+    assert resultat_feature["properties"]["dans_perimetre_analyse"] is False
     assert resultat_feature["properties"]["troncon_id"] == "route-1"
     assert resultat_feature["properties"]["distance_routiere_m"] == 250.0

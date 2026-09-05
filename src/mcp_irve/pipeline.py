@@ -147,7 +147,7 @@ async def selectionner_meilleur_candidat(
             x_l93=best_candidate.point_le_plus_proche.x,
             y_l93=best_candidate.point_le_plus_proche.y,
         )
-        eligible = best_candidate.distance_routiere_m <= SETTINGS.seuil_eligibilite_m
+        dans_perimetre_analyse = best_candidate.distance_routiere_m <= SETTINGS.perimetre_analyse_m
 
         repartition_type_m: dict[str, float] = {}
         if best_itineraire.geometry is not None:
@@ -175,7 +175,7 @@ async def selectionner_meilleur_candidat(
             distance_vol_oiseau_m=best_candidate.distance_vol_oiseau_m,
             distance_routiere_m=best_candidate.distance_routiere_m,
             point_raccordement=point_raccordement,
-            eligible=eligible,
+            dans_perimetre_analyse=dans_perimetre_analyse,
             candidat=best_candidate.candidate,
             itineraire=best_itineraire,
             distance_premier_troncon_m=best_candidate.distance_premier_troncon_m,
@@ -195,7 +195,7 @@ async def selectionner_meilleur_candidat(
         "distance_itineraire_m": round(resultat.distance_itineraire_m, 1),
         "distance_dernier_troncon_m": round(resultat.distance_dernier_troncon_m, 1),
         "point_raccordement": {"lat": point_raccordement.lat, "lon": point_raccordement.lon},
-        "eligible": eligible,
+        "dans_perimetre_analyse": dans_perimetre_analyse,
         "repartition_type_m": {k: round(v, 1) for k, v in resultat.repartition_type_m.items()},
     }
 
@@ -255,6 +255,6 @@ async def analyser_raccordement(
     return {
         "adresse_normalisee": geocodage["adresse_normalisee"],
         "distance_routiere_m": resultat["distance_routiere_m"],
-        "eligible": resultat["eligible"],
+        "dans_perimetre_analyse": resultat["dans_perimetre_analyse"],
         "chemins_fichiers": chemins_fichiers,
     }

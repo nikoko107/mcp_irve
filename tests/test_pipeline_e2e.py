@@ -112,12 +112,12 @@ async def test_sequence_complete_eligible(monkeypatch, patch_output_dir):
 
     resultat = await pipeline.selectionner_meilleur_candidat(state, None)
     assert state.stage is Stage.RESULTAT
-    assert resultat["eligible"] is True
+    assert resultat["dans_perimetre_analyse"] is True
     assert resultat["distance_routiere_m"] == pytest.approx(155.0)
     assert resultat["distance_itineraire_m"] == pytest.approx(150.0)
     assert resultat["distance_dernier_troncon_m"] == pytest.approx(5.0)
     assert state.resultat is not None
-    assert state.resultat.eligible is True
+    assert state.resultat.dans_perimetre_analyse is True
     # L'itinéraire mocké (fake_calculer_itineraire) ne longe route-1 (seul tronçon du
     # réseau routier) que sur sa toute dernière portion (il rejoint le début de la
     # route en ligne droite depuis le point de départ) : l'essentiel de sa longueur
@@ -201,9 +201,9 @@ async def test_sequence_complete_non_eligible(monkeypatch, patch_output_dir):
     pipeline.filtrer_candidats_accessibles(state)
     resultat = await pipeline.selectionner_meilleur_candidat(state, None)
 
-    assert resultat["eligible"] is False
+    assert resultat["dans_perimetre_analyse"] is False
     assert resultat["distance_routiere_m"] == pytest.approx(255.0)
-    assert state.resultat.eligible is False
+    assert state.resultat.dans_perimetre_analyse is False
 
     pdf = pipeline.generer_rapport_pdf(state)
     assert Path(pdf["chemin_fichier"]).is_file()
@@ -222,10 +222,10 @@ async def test_analyser_raccordement_renvoie_le_contrat_attendu(monkeypatch, pat
     assert set(resultat.keys()) == {
         "adresse_normalisee",
         "distance_routiere_m",
-        "eligible",
+        "dans_perimetre_analyse",
         "chemins_fichiers",
     }
-    assert resultat["eligible"] is True
+    assert resultat["dans_perimetre_analyse"] is True
     # Flags par défaut : carte + pdf générés, geojson non généré.
     assert set(resultat["chemins_fichiers"].keys()) == {"carte", "pdf"}
     for chemin in resultat["chemins_fichiers"].values():

@@ -55,8 +55,8 @@
   <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-zone)"></span>Accès à la voirie (point d'analyse -&gt; route)</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:#000000"></span>Point d'analyse</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-resultat)"></span>Point de raccordement</div>
-  {% if eligible is not none %}
-  <div class="statut">{% if eligible %}✅ Éligible{% else %}❌ Non éligible{% endif %} — {{ distance_routiere_m }} m (seuil {{ seuil_m }} m)</div>
+  {% if dans_perimetre_analyse is not none %}
+  <div class="statut">{% if dans_perimetre_analyse %}✅ Dans le périmètre d'analyse{% else %}⚠️ Hors périmètre d'analyse{% endif %} — {{ distance_routiere_m }} m (périmètre {{ perimetre_m }} m)</div>
   {% endif %}
   {% if repartition_type_m %}
   <div class="repartition">

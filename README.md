@@ -95,7 +95,7 @@ En cas de souci, les logs du serveur sont dans `~/Library/Logs/Claude/mcp-server
 
 Toutes les valeurs par défaut (`config.py`) sont surchargeables par variable d'environnement, notamment :
 
-- `MCP_IRVE_RAYON_RECHERCHE_M` (défaut 300), `MCP_IRVE_BUFFER_M` (défaut 10), `MCP_IRVE_SEUIL_M` (défaut 200)
+- `MCP_IRVE_RAYON_RECHERCHE_M` (défaut 300), `MCP_IRVE_BUFFER_M` (défaut 10), `MCP_IRVE_PERIMETRE_ANALYSE_M` (défaut 200 — périmètre de recherche, pas une contrainte électrique)
 - `MCP_IRVE_OUTPUT_DIR` (défaut `./output`) — emplacement des cartes/PDF/GeoJSON générés
 
 ## Développement

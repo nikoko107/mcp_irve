@@ -36,9 +36,14 @@ class Settings:
     )
     buffer_accessibilite_m: int = field(default_factory=lambda: _env_int("MCP_IRVE_BUFFER_M", 10))
     n_plus_proches: int = field(default_factory=lambda: _env_int("MCP_IRVE_N_PLUS_PROCHES", 5))
-    seuil_eligibilite_m: float = field(
-        default_factory=lambda: _env_float("MCP_IRVE_SEUIL_M", 200.0)
+    perimetre_analyse_m: float = field(
+        default_factory=lambda: _env_float("MCP_IRVE_PERIMETRE_ANALYSE_M", 200.0)
     )
+    """Périmètre de recherche par défaut (comparaison `distance_routiere_m <=
+    perimetre_analyse_m`) : un paramètre d'analyse pour délimiter ce qui est considéré
+    "à proximité", pas une contrainte électrique réglementaire — ne pas le présenter
+    comme une "règle d'éligibilité" dans les outils MCP ou les sorties. Voir CLAUDE.md,
+    section "Le périmètre de 200 m n'est pas une contrainte électrique"."""
     longueur_min_segment_m: float = 1.0
     """En-deçà de cette longueur, un segment candidat issu de la découpe (effleurement
     tangentiel du buffer) est considéré comme un artefact géométrique et ignoré."""

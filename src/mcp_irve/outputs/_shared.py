@@ -96,7 +96,7 @@ def construire_features(
                     "type": resultat.type,
                     "distance_vol_oiseau_m": round(resultat.distance_vol_oiseau_m, 1),
                     "distance_routiere_m": round(resultat.distance_routiere_m, 1),
-                    "eligible": resultat.eligible,
+                    "dans_perimetre_analyse": resultat.dans_perimetre_analyse,
                 },
             )
         )

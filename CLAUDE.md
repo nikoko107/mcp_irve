@@ -15,7 +15,7 @@ Aucun appel réseau réel dans les tests (tout est mocké avec `respx` ou en mon
 
 ## Projet
 
-Serveur MCP « MCP Raccordement IRVE » : détermine si un point de raccordement de borne de recharge (IRVE) est éligible au réseau basse tension (BT) Enedis, sur la base d'un seuil de distance **routière** de 200 m (`SETTINGS.seuil_eligibilite_m`, comparaison `<=`). Voir `mcp-raccordement-irve.md` pour le cahier des charges d'origine.
+Serveur MCP « MCP Raccordement IRVE » : mesure la distance **routière** entre un point de raccordement de borne de recharge (IRVE) et le réseau basse tension (BT) Enedis, et signale si cette distance reste dans un périmètre d'analyse par défaut de 200 m (`SETTINGS.perimetre_analyse_m`, comparaison `<=`). **Ce périmètre est un paramètre de recherche, pas une contrainte électrique réglementaire — voir la section « Le périmètre de 200 m n'est pas une contrainte électrique » plus bas avant de le présenter comme une règle d'éligibilité.** Voir `mcp-raccordement-irve.md` pour le cahier des charges d'origine (qui, lui, parle encore d'« éligibilité » — écart de vocabulaire assumé, tranché explicitement avec l'utilisateur).
 
 **Principe central : tout le calcul géométrique reste côté serveur.** Les outils MCP ne renvoient que des synthèses numériques et des chemins de fichiers — jamais de géométrie brute. `pipeline.py` reste volontairement indépendant du SDK `mcp` ; c'est `server.py` qui fait le pont (voir plus bas).
 
@@ -50,7 +50,18 @@ Lecture **littérale** du cahier des charges (tranchée explicitement avec l'uti
 2. `distance_itineraire_m` : trajet piéton IGN départ -> point_raccordement, inchangé.
 3. `distance_dernier_troncon_m` : distance à vol d'oiseau point_raccordement -> câble BT le plus proche (`geo/candidates.py::distance_au_reseau_bt`, toujours ≤ `buffer_m` par construction).
 
-C'est ce total qui est comparé à `SETTINGS.seuil_eligibilite_m` et qui sélectionne le meilleur candidat parmi les `n_plus_proches`. La répartition par type de voie (`geo/itineraire.py`) reçoit en plus les seaux `ACCES_VOIRIE` et `RACCORDEMENT_RESEAU_BT` pour ces deux tronçons hors voirie, ajoutés après coup par `pipeline.py` (hors périmètre de `repartir_longueur_par_type`, qui ne couvre que l'itinéraire routier lui-même).
+C'est ce total qui est comparé à `SETTINGS.perimetre_analyse_m` et qui sélectionne le meilleur candidat parmi les `n_plus_proches`. La répartition par type de voie (`geo/itineraire.py`) reçoit en plus les seaux `ACCES_VOIRIE` et `RACCORDEMENT_RESEAU_BT` pour ces deux tronçons hors voirie, ajoutés après coup par `pipeline.py` (hors périmètre de `repartir_longueur_par_type`, qui ne couvre que l'itinéraire routier lui-même).
+
+### Le périmètre de 200 m n'est pas une contrainte électrique (nouvelle instruction utilisateur)
+
+**Ne présenter `SETTINGS.perimetre_analyse_m` (200 m par défaut) nulle part — ni dans les docstrings des outils MCP, ni dans le rapport PDF, ni sur la carte — comme une règle d'éligibilité électrique ou une contrainte réglementaire Enedis. C'est un paramètre de recherche qui délimite ce que l'analyse considère comme « à proximité », pas une décision d'éligibilité au réseau.** Renommages effectués en conséquence (refonte complète décidée par l'utilisateur, y compris sur l'API des outils) :
+
+- `SETTINGS.seuil_eligibilite_m` → `SETTINGS.perimetre_analyse_m` (variable d'environnement : `MCP_IRVE_SEUIL_M` renommée `MCP_IRVE_PERIMETRE_ANALYSE_M`).
+- `Resultat.eligible` → `Resultat.dans_perimetre_analyse` ; idem pour la clé `"eligible"` dans les dict retournés par les outils `selectionner_meilleur_candidat` et `analyser_raccordement`, devenue `"dans_perimetre_analyse"` — **changement de contrat de l'API MCP**, tout client qui lisait la clé `"eligible"` doit être mis à jour.
+- Rapport PDF : bandeau de statut « ÉLIGIBLE »/« NON ÉLIGIBLE » → « DANS LE PÉRIMÈTRE D'ANALYSE »/« HORS PÉRIMÈTRE D'ANALYSE » ; ligne de table « Seuil d'éligibilité » → « Périmètre d'analyse ». La 3ᵉ mise en garde protégée de `pdf_report.py::MISES_EN_GARDE` a été reformulée pour ne plus employer « seuil d'éligibilité » (le test associé vérifie une sous-chaîne inchangée, `"s'applique à la distance routière"`, donc toujours valide).
+- Carte HTML : variable de template `eligible` → `dans_perimetre_analyse`, `seuil_m` → `perimetre_m`.
+
+Le cahier des charges d'origine (`mcp-raccordement-irve.md`) n'a **pas** été modifié — il continue de parler d'« éligibilité » au sens littéral du document d'origine, laissé tel quel comme référence historique. L'écart entre ce document et l'implémentation actuelle est assumé et documenté ici ; ne pas le réconcilier en modifiant le cahier des charges sans nouvelle instruction explicite.
 
 La zone tampon elle-même (union des buffers `buffer_m` autour du réseau BT) est calculée par `geo/accessibility.py::buffer_reseau_bt` — appelée une fois en interne par `filtrer_candidats`, et une seconde fois par `pipeline.py::filtrer_candidats_accessibles` pour la conserver dans `state.buffer_zone`/`state.buffer_m` (affichage carte + export GeoJSON complet). Duplication de calcul assumée (coût négligeable) pour ne pas changer la signature publique de `filtrer_candidats`.
 

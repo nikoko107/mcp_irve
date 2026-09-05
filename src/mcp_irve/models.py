@@ -105,10 +105,14 @@ class Resultat:
     distance_routiere_m: float
     """Distance totale départ -> réseau BT : distance_premier_troncon_m +
     distance_itineraire_m + distance_dernier_troncon_m. C'est cette distance totale (pas
-    seulement le tronçon de voirie) qui est comparée au seuil d'éligibilité — voir
-    RankedCandidate.distance_routiere_m."""
+    seulement le tronçon de voirie) qui est comparée à SETTINGS.perimetre_analyse_m —
+    voir RankedCandidate.distance_routiere_m."""
     point_raccordement: PointGeo
-    eligible: bool
+    dans_perimetre_analyse: bool
+    """distance_routiere_m <= SETTINGS.perimetre_analyse_m. Un simple repère de proximité
+    pour l'analyse (le périmètre par défaut de 200 m est un paramètre de recherche, pas
+    une contrainte électrique réglementaire) — ne pas le présenter comme une décision
+    d'éligibilité au réseau."""
     candidat: CandidateSegment
     itineraire: Itineraire | None = None
     distance_premier_troncon_m: float = 0.0

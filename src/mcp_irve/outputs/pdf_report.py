@@ -5,9 +5,10 @@ Les trois mises en garde ci-dessous sont un contrat avec le cahier des charges
 ce module doit les préserver telles quelles, un test dédié (tests/outputs/test_pdf_report.py)
 vérifie leur présence par extraction du texte du PDF généré.
 
-Palette et mise en page pensées pour la lisibilité : statut d'éligibilité et mises en
-garde dans des encadrés à fond coloré (pas seulement du texte coloré, plus visible en
-lecture rapide), en-têtes de colonnes et zébrage sur les tables à lignes homogènes.
+Palette et mise en page pensées pour la lisibilité : statut (dans/hors périmètre
+d'analyse) et mises en garde dans des encadrés à fond coloré (pas seulement du texte
+coloré, plus visible en lecture rapide), en-têtes de colonnes et zébrage sur les
+tables à lignes homogènes.
 Toutes les couleurs restent des teintes Latin-1/WinAnsi-safe appliquées via `colors`
 reportlab — aucun caractère hors de cette plage n'est introduit dans le texte (cf.
 piège Helvetica documenté plus bas, ex. `≠` mal rendu).
@@ -33,8 +34,8 @@ MISES_EN_GARDE = [
     "exhaustives ni à jour en temps réel.",
     "La distance routière calculée est une approximation de la distance de "
     "raccordement réelle (le tracé de voirie n'est pas le tracé de tranchée/génie civil réel).",
-    "Le seuil d'éligibilité de 200 m s'applique à la distance routière, pas à la "
-    "distance à vol d'oiseau.",
+    "Le périmètre d'analyse de 200 m (un paramètre de recherche, pas une contrainte "
+    "électrique) s'applique à la distance routière, pas à la distance à vol d'oiseau.",
 ]
 
 # --- Palette ---
@@ -152,19 +153,19 @@ def generer_rapport_pdf(state: SessionState) -> Path:
         "Entete", parent=label_style, textColor=COULEUR_PRIMAIRE, fontSize=9
     )
 
-    if resultat.eligible:
+    if resultat.dans_perimetre_analyse:
         statut_fond, statut_couleur = COULEUR_SUCCES_FOND, COULEUR_SUCCES
-        statut_texte = "ÉLIGIBLE"
+        statut_texte = "DANS LE PÉRIMÈTRE D'ANALYSE"
         statut_detail = (
             f"Distance routière de {resultat.distance_routiere_m:.1f} m, inférieure ou égale "
-            f"au seuil d'éligibilité de {SETTINGS.seuil_eligibilite_m:.0f} m."
+            f"au périmètre d'analyse de {SETTINGS.perimetre_analyse_m:.0f} m."
         )
     else:
         statut_fond, statut_couleur = COULEUR_DANGER_FOND, COULEUR_DANGER
-        statut_texte = "NON ÉLIGIBLE"
+        statut_texte = "HORS PÉRIMÈTRE D'ANALYSE"
         statut_detail = (
             f"Distance routière de {resultat.distance_routiere_m:.1f} m, supérieure "
-            f"au seuil d'éligibilité de {SETTINGS.seuil_eligibilite_m:.0f} m."
+            f"au périmètre d'analyse de {SETTINGS.perimetre_analyse_m:.0f} m."
         )
     statut_style = ParagraphStyle("Statut", parent=h2, textColor=statut_couleur, spaceAfter=2)
     statut_detail_style = ParagraphStyle(
@@ -176,7 +177,7 @@ def generer_rapport_pdf(state: SessionState) -> Path:
 
     elements = [
         Paragraph("Rapport de raccordement IRVE", title_style),
-        Paragraph("Éligibilité au réseau BT Enedis — distance routière", sous_titre_style),
+        Paragraph("Distance routière au réseau BT Enedis", sous_titre_style),
         HRFlowable(
             width="100%", thickness=0.75, color=COULEUR_BORDURE, spaceBefore=6, spaceAfter=10
         ),
@@ -222,7 +223,7 @@ def generer_rapport_pdf(state: SessionState) -> Path:
                     "Distance routière totale (jusqu'au réseau BT)",
                     f"{resultat.distance_routiere_m:.1f} m",
                 ],
-                ["Seuil d'éligibilité", f"{SETTINGS.seuil_eligibilite_m:.0f} m"],
+                ["Périmètre d'analyse", f"{SETTINGS.perimetre_analyse_m:.0f} m"],
                 [
                     "Point de raccordement (WGS84)",
                     f"{resultat.point_raccordement.lat:.6f}, {resultat.point_raccordement.lon:.6f}",

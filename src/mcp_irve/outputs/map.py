@@ -44,10 +44,10 @@ def generer_carte_html(state: SessionState) -> Path:
     html = template.render(
         adresse=state.adresse_normalisee or "",
         geojson_str=geojson_str,
-        eligible=resultat.eligible if resultat is not None else None,
+        dans_perimetre_analyse=resultat.dans_perimetre_analyse if resultat is not None else None,
         distance_routiere_m=distance_routiere_m,
         repartition_type_m=repartition_type_m,
-        seuil_m=SETTINGS.seuil_eligibilite_m,
+        perimetre_m=SETTINGS.perimetre_analyse_m,
         enedis_base_url=SETTINGS.enedis_base_url,
         enedis_dataset_aerien=SETTINGS.enedis_dataset_aerien,
         enedis_dataset_souterrain=SETTINGS.enedis_dataset_souterrain,

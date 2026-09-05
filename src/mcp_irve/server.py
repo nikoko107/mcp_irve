@@ -107,8 +107,9 @@ def filtrer_candidats_accessibles(buffer_m: int = 10) -> dict:
 @mcp.tool()
 async def selectionner_meilleur_candidat(ctx: Context, n_plus_proches: int = 5) -> dict:
     """Présélection à vol d'oiseau des n candidats les plus proches, calcul
-    d'itinéraire routier IGN pour chacun, sélection du minimum, comparaison au seuil
-    d'éligibilité (200 m par défaut)."""
+    d'itinéraire routier IGN pour chacun, sélection du minimum, comparaison au
+    périmètre d'analyse (200 m par défaut — un paramètre de recherche, pas une
+    contrainte électrique)."""
     state = get_state("default")
     return await _call(pipeline.selectionner_meilleur_candidat(state, _http(ctx), n_plus_proches))
 
@@ -131,9 +132,9 @@ def exporter_geojson(niveau: str = "resultat") -> dict:
 
 @mcp.tool()
 def generer_rapport_pdf() -> dict:
-    """Génère le rapport PDF (adresse, tronçon retenu, distances, éligibilité, mises
-    en garde) à partir du résultat en mémoire. Nécessite qu'un résultat ait été
-    sélectionné."""
+    """Génère le rapport PDF (adresse, tronçon retenu, distances, statut vis-à-vis du
+    périmètre d'analyse, mises en garde) à partir du résultat en mémoire. Nécessite
+    qu'un résultat ait été sélectionné."""
     state = get_state("default")
     return _call_sync(pipeline.generer_rapport_pdf, state)
 

@@ -59,7 +59,7 @@ def build_state(
         point_raccordement=PointGeo(
             lat=point_raccordement_lat, lon=point_raccordement_lon, x_l93=650000.0, y_l93=6860000.0
         ),
-        eligible=eligible,
+        dans_perimetre_analyse=eligible,
         candidat=candidat,
         itineraire=itineraire,
     )
