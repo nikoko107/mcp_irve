@@ -86,6 +86,21 @@ def test_carte_html_embarque_toutes_les_features(patch_output_dir):
     assert couches_embarquees.isdisjoint({"bt_aerien", "bt_souterrain"})
 
 
+def test_carte_html_embarque_acces_voirie_quand_premier_troncon_non_nul(patch_output_dir):
+    state = build_state(with_layers=True)
+    state.resultat.distance_premier_troncon_m = 5.0
+
+    chemin = map_output.generer_carte_html(state)
+    html = chemin.read_text(encoding="utf-8")
+
+    geojson = _extract_embedded_geojson(html)
+    acces_voirie_feature = next(
+        f for f in geojson["features"] if f["properties"]["layer"] == "acces_voirie"
+    )
+    assert acces_voirie_feature["geometry"]["type"] == "LineString"
+    assert acces_voirie_feature["properties"]["distance_m"] == 5.0
+
+
 def test_carte_html_echappe_les_scripts_dans_ladresse(patch_output_dir):
     payload = "</script><script>alert(1)</script>"
     state = build_state(with_layers=False, adresse=f"1 rue Test {payload}")

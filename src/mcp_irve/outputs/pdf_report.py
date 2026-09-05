@@ -209,6 +209,10 @@ def generer_rapport_pdf(state: SessionState) -> Path:
                 ["Type", resultat.type],
                 ["Longueur du segment candidat", f"{resultat.candidat.length_m:.1f} m"],
                 ["Distance à vol d'oiseau", f"{resultat.distance_vol_oiseau_m:.1f} m"],
+                [
+                    "Distance du point d'analyse à la route la plus proche",
+                    f"{resultat.distance_premier_troncon_m:.1f} m",
+                ],
                 ["Distance à pied jusqu'à la voirie", f"{resultat.distance_itineraire_m:.1f} m"],
                 [
                     "Dernier tronçon (voirie -> réseau BT)",

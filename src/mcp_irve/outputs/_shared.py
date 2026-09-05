@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from shapely.geometry import mapping
+from shapely.geometry import LineString, Point, mapping
 from shapely.geometry.base import BaseGeometry
 
 from ..config import SETTINGS
@@ -120,5 +120,19 @@ def construire_features(
                     },
                 )
             )
+            # Le point de départ n'est pas toujours sur une route (immeuble, place...) :
+            # ce petit tronçon rend visible l'écart entre le point d'analyse et le point
+            # réellement pris comme origine par l'itinéraire IGN, sinon invisible sur la
+            # carte (l'itinéraire, lui, commence déjà sur la voirie).
+            if state.point_depart is not None and resultat.distance_premier_troncon_m > 1e-6:
+                premier_point = Point(resultat.itineraire.geometry.coords[0])
+                depart_point = Point(state.point_depart.x_l93, state.point_depart.y_l93)
+                features.append(
+                    _feature(
+                        LineString([depart_point, premier_point]),
+                        "acces_voirie",
+                        {"distance_m": round(resultat.distance_premier_troncon_m, 1)},
+                    )
+                )
 
     return features

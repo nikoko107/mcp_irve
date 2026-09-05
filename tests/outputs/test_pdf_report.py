@@ -102,6 +102,24 @@ def test_pdf_affiche_le_detail_itineraire_et_dernier_troncon(patch_output_dir):
     assert "155.0 m" in texte
 
 
+def test_pdf_affiche_le_premier_troncon(patch_output_dir):
+    state = build_state(eligible=True)
+    state.resultat.distance_premier_troncon_m = 5.0
+    state.resultat.distance_itineraire_m = 150.0
+    state.resultat.distance_dernier_troncon_m = 5.0
+    state.resultat.distance_routiere_m = 160.0
+
+    chemin = pdf_report.generer_rapport_pdf(state)
+    texte = _extract_text(chemin)
+
+    # Comme pour "Distance routière totale (jusqu'au réseau BT)", ce libellé long est
+    # renvoyé sur deux lignes par pdfplumber (largeur de colonne) : on ne vérifie que
+    # le début, déjà distinctif.
+    assert "Distance du point d'analyse à la route" in texte
+    assert "5.0 m" in texte
+    assert "160.0 m" in texte
+
+
 def test_pdf_omet_la_table_repartition_par_type_quand_vide(patch_output_dir):
     state = build_state(eligible=True)
     assert state.resultat.repartition_type_m == {}

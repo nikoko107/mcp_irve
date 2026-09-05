@@ -29,6 +29,10 @@ RACCORDEMENT_RESEAU_BT = "Raccordement direct au réseau BT (hors voirie)"
 """Étiquette du dernier tronçon (point_raccordement -> câble BT réel), ajoutée par
 pipeline.py à la répartition renvoyée par repartir_longueur_par_type — cette fonction
 ne couvre que l'itinéraire routier, pas ce tronçon hors voirie."""
+ACCES_VOIRIE = "Accès à la voirie (point d'analyse -> route)"
+"""Étiquette du premier tronçon (point d'analyse -> point réellement pris comme origine
+par l'itinéraire IGN), ajoutée par pipeline.py au même titre que RACCORDEMENT_RESEAU_BT —
+hors périmètre de repartir_longueur_par_type, qui ne couvre que l'itinéraire routier."""
 
 
 def repartir_longueur_par_type(

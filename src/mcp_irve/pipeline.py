@@ -111,15 +111,26 @@ async def selectionner_meilleur_candidat(
             itineraire = await geoplateforme_client.calculer_itineraire(
                 http, state.point_depart.lat, state.point_depart.lon, lat_c, lon_c
             )
-            # Distance totale départ -> réseau BT : itinéraire piéton jusqu'à la route
+            # Distance totale départ -> réseau BT : premier tronçon (point d'analyse ->
+            # point réellement pris comme origine par l'itinéraire IGN — le point saisi
+            # n'est pas toujours sur une route) + itinéraire piéton jusqu'à la route
             # candidate + dernier tronçon (route -> câble BT réel, non couvert par la
             # voirie). Le classement et la comparaison au seuil portent sur ce total, pas
             # sur le seul tronçon de voirie — sans quoi la distance affichée sous-estime
-            # systématiquement la distance réelle jusqu'au réseau (jusqu'à buffer_m).
+            # systématiquement la distance réelle jusqu'au réseau.
+            rc.distance_premier_troncon_m = (
+                point_depart_l93.distance(Point(itineraire.geometry.coords[0]))
+                if itineraire.geometry is not None
+                else 0.0
+            )
             rc.distance_dernier_troncon_m = candidates.distance_au_reseau_bt(
                 rc.point_le_plus_proche, state.reseau_bt
             )
-            rc.distance_routiere_m = itineraire.distance_m + rc.distance_dernier_troncon_m
+            rc.distance_routiere_m = (
+                rc.distance_premier_troncon_m
+                + itineraire.distance_m
+                + rc.distance_dernier_troncon_m
+            )
             if best is None or rc.distance_routiere_m < best[0].distance_routiere_m:
                 best = (rc, itineraire)
 
@@ -149,6 +160,11 @@ async def selectionner_meilleur_candidat(
             repartition_type_m[itineraire_geo.RACCORDEMENT_RESEAU_BT] = (
                 best_candidate.distance_dernier_troncon_m
             )
+        if best_candidate.distance_premier_troncon_m:
+            repartition_type_m[itineraire_geo.ACCES_VOIRIE] = (
+                best_candidate.distance_premier_troncon_m
+            )
+        if best_candidate.distance_dernier_troncon_m or best_candidate.distance_premier_troncon_m:
             repartition_type_m = dict(
                 sorted(repartition_type_m.items(), key=lambda item: item[1], reverse=True)
             )
@@ -162,6 +178,7 @@ async def selectionner_meilleur_candidat(
             eligible=eligible,
             candidat=best_candidate.candidate,
             itineraire=best_itineraire,
+            distance_premier_troncon_m=best_candidate.distance_premier_troncon_m,
             distance_itineraire_m=best_itineraire.distance_m,
             distance_dernier_troncon_m=best_candidate.distance_dernier_troncon_m,
             repartition_type_m=repartition_type_m,
@@ -174,6 +191,7 @@ async def selectionner_meilleur_candidat(
         "type": resultat.type,
         "distance_vol_oiseau_m": round(resultat.distance_vol_oiseau_m, 1),
         "distance_routiere_m": round(resultat.distance_routiere_m, 1),
+        "distance_premier_troncon_m": round(resultat.distance_premier_troncon_m, 1),
         "distance_itineraire_m": round(resultat.distance_itineraire_m, 1),
         "distance_dernier_troncon_m": round(resultat.distance_dernier_troncon_m, 1),
         "point_raccordement": {"lat": point_raccordement.lat, "lon": point_raccordement.lon},

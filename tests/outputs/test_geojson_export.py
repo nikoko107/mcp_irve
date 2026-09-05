@@ -100,6 +100,33 @@ def test_export_sans_buffer_zone_omet_la_couche_buffer(patch_output_dir):
     assert "buffer" not in layers
 
 
+def test_export_niveau_resultat_omet_acces_voirie_quand_distance_nulle(patch_output_dir):
+    state = build_state(with_layers=True)
+    assert state.resultat.distance_premier_troncon_m == 0.0
+
+    chemin = geojson_export.exporter_geojson(state, "resultat")
+    data = json.loads(chemin.read_text())
+
+    layers = {f["properties"]["layer"] for f in data["features"]}
+    assert "acces_voirie" not in layers
+
+
+def test_export_niveau_resultat_contient_acces_voirie_quand_distance_non_nulle(patch_output_dir):
+    state = build_state(with_layers=True)
+    state.resultat.distance_premier_troncon_m = 5.0
+
+    chemin = geojson_export.exporter_geojson(state, "resultat")
+    data = json.loads(chemin.read_text())
+
+    acces_voirie_feature = next(
+        f for f in data["features"] if f["properties"]["layer"] == "acces_voirie"
+    )
+    assert acces_voirie_feature["geometry"]["type"] == "LineString"
+    assert acces_voirie_feature["properties"]["distance_m"] == 5.0
+    for lon, lat in _iter_all_coords(acces_voirie_feature["geometry"]):
+        _assert_wgs84_plausible(lon, lat)
+
+
 def test_export_proprietes_resultat_portent_les_bonnes_valeurs(patch_output_dir):
     state = build_state(with_layers=False, eligible=False)
 

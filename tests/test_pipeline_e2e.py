@@ -50,9 +50,7 @@ async def fake_recuperer_troncons_proches(http, lat, lon, rayon_m):
 
 async def fake_recuperer_routes_proches(http, lat, lon, rayon_m):
     return [
-        RouteSegment(
-            id="route-1", nature="Route à 1 chaussée", geometry=ROUTE_LINE, attributes={}
-        )
+        RouteSegment(id="route-1", nature="Route à 1 chaussée", geometry=ROUTE_LINE, attributes={})
     ]
 
 
@@ -148,6 +146,45 @@ async def test_sequence_complete_eligible(monkeypatch, patch_output_dir):
     assert Path(pdf["chemin_fichier"]).is_file()
     for chemin in (carte["chemin_fichier"], geojson["chemin_fichier"], pdf["chemin_fichier"]):
         assert Path(chemin).parent == patch_output_dir
+
+
+@pytest.mark.asyncio
+async def test_distance_premier_troncon_non_nulle(monkeypatch, patch_output_dir):
+    # Variante de l'itinéraire mocké dont le premier point de la géométrie diffère du
+    # point de départ envoyé dans la requête (l'API IGN projette sur son propre graphe
+    # avant de router) : écart connu de 5.0 m par Pythagore (3-4-5).
+    async def fake_calculer_itineraire_decale(http, start_lat, start_lon, end_lat, end_lon):
+        geometry = LineString([(DEPART_X + 3.0, DEPART_Y + 4.0), (650000.0, 6860000.0)])
+        return Itineraire(distance_m=150.0, duree_s=150.0 * 0.8, geometry=geometry)
+
+    monkeypatch.setattr(pipeline.ban_client, "geocoder_adresse", _make_fake_geocoder(ADRESSE))
+    monkeypatch.setattr(
+        pipeline.enedis_client, "recuperer_troncons", fake_recuperer_troncons_proches
+    )
+    monkeypatch.setattr(
+        pipeline.geoplateforme_client, "recuperer_routes", fake_recuperer_routes_proches
+    )
+    monkeypatch.setattr(
+        pipeline.geoplateforme_client,
+        "calculer_itineraire",
+        fake_calculer_itineraire_decale,
+    )
+
+    state = get_state("e2e-premier-troncon")
+
+    geocodage = await pipeline.geocoder_entree(state, None, ADRESSE)
+    await pipeline.recuperer_reseau_bt(state, None, geocodage["lat"], geocodage["lon"])
+    await pipeline.recuperer_reseau_routier(state, None, geocodage["lat"], geocodage["lon"])
+    pipeline.filtrer_candidats_accessibles(state)
+    resultat = await pipeline.selectionner_meilleur_candidat(state, None)
+
+    assert resultat["distance_premier_troncon_m"] == pytest.approx(5.0)
+    # Total = premier tronçon (5.0) + itinéraire piéton (150.0) + dernier tronçon (5.0).
+    assert resultat["distance_routiere_m"] == pytest.approx(160.0)
+    assert resultat["distance_itineraire_m"] == pytest.approx(150.0)
+    assert resultat["distance_dernier_troncon_m"] == pytest.approx(5.0)
+
+    assert state.resultat.repartition_type_m[itineraire_geo.ACCES_VOIRIE] == pytest.approx(5.0)
 
 
 # --- Séquence complète, scénario non-éligible ---

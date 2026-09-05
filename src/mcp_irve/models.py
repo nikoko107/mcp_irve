@@ -65,10 +65,18 @@ class RankedCandidate:
     point_le_plus_proche: BaseGeometry  # Point, EPSG:2154 — projection du point de départ
     distance_vol_oiseau_m: float
     distance_routiere_m: float | None = None
-    """Distance totale départ -> réseau BT une fois calculée : itinéraire piéton
-    (départ -> point_le_plus_proche) + dernier tronçon (point_le_plus_proche -> câble BT,
-    voir distance_dernier_troncon_m). C'est cette distance totale qui sert au classement
-    du meilleur candidat et à la comparaison au seuil d'éligibilité."""
+    """Distance totale départ -> réseau BT une fois calculée : premier tronçon (départ ->
+    point réellement pris comme origine par l'itinéraire IGN, voir distance_premier_troncon_m)
+    + itinéraire piéton (-> point_le_plus_proche) + dernier tronçon (point_le_plus_proche ->
+    câble BT, voir distance_dernier_troncon_m). C'est cette distance totale qui sert au
+    classement du meilleur candidat et à la comparaison au seuil d'éligibilité."""
+    distance_premier_troncon_m: float | None = None
+    """Distance à vol d'oiseau entre le point de départ saisi (point d'analyse) et le
+    premier point de la géométrie renvoyée par l'itinéraire IGN. Le point de départ n'est
+    pas toujours situé exactement sur une route (immeuble, place...) : l'API de routage
+    IGN projette alors la requête sur le point routable le plus proche de son propre
+    graphe avant de calculer l'itinéraire, un écart que `itineraire.distance_m` ne couvre
+    pas. Nul si le point de départ est déjà sur le réseau routier utilisé par l'API."""
     distance_dernier_troncon_m: float | None = None
     """Distance à vol d'oiseau entre point_le_plus_proche (sur la route candidate) et le
     point le plus proche du réseau BT réel — voir geo/candidates.py::distance_au_reseau_bt.
@@ -95,16 +103,21 @@ class Resultat:
     type: str
     distance_vol_oiseau_m: float
     distance_routiere_m: float
-    """Distance totale départ -> réseau BT : distance_itineraire_m + distance_dernier_troncon_m.
-    C'est cette distance totale (pas seulement le tronçon de voirie) qui est comparée au
-    seuil d'éligibilité — voir RankedCandidate.distance_routiere_m."""
+    """Distance totale départ -> réseau BT : distance_premier_troncon_m +
+    distance_itineraire_m + distance_dernier_troncon_m. C'est cette distance totale (pas
+    seulement le tronçon de voirie) qui est comparée au seuil d'éligibilité — voir
+    RankedCandidate.distance_routiere_m."""
     point_raccordement: PointGeo
     eligible: bool
     candidat: CandidateSegment
     itineraire: Itineraire | None = None
+    distance_premier_troncon_m: float = 0.0
+    """Distance à vol d'oiseau point de départ (point d'analyse) -> point réellement pris
+    comme origine par l'itinéraire IGN (nul si le point d'analyse est déjà sur la route).
+    Voir RankedCandidate.distance_premier_troncon_m."""
     distance_itineraire_m: float = 0.0
     """Distance piétonne (IGN) départ -> point_raccordement (sur la route candidate),
-    sans le dernier tronçon jusqu'au câble BT — équivaut à itineraire.distance_m."""
+    sans le premier ni le dernier tronçon — équivaut à itineraire.distance_m."""
     distance_dernier_troncon_m: float = 0.0
     """Distance à vol d'oiseau point_raccordement -> câble BT le plus proche (le tronçon
     non couvert par le réseau routier, <= buffer_m). Voir RankedCandidate."""

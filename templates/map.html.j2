@@ -52,6 +52,7 @@
   <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-routes)"></span>Routes / chemins</div>
   <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-candidats)"></span>Candidats accessibles</div>
   <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-itineraire)"></span>Itinéraire routier (tracé projeté)</div>
+  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-zone)"></span>Accès à la voirie (point d'analyse -&gt; route)</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:#000000"></span>Point d'analyse</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-resultat)"></span>Point de raccordement</div>
   {% if eligible is not none %}
@@ -108,6 +109,10 @@ const styleByLayer = {
   // "tracé projeté" (itinéraire routier calculé) : violet tireté, distinct du bleu du
   // réseau BT.
   itineraire: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ITINERAIRE, width: 3, lineDash: [2, 6] }) }),
+  // Écart entre le point d'analyse (pas toujours sur une route) et le point réellement
+  // pris comme origine par l'itinéraire IGN — gris neutre fin, un simple repère
+  // technique, pas une entité de données au même titre que le réseau ou l'itinéraire.
+  acces_voirie: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ZONE, width: 1.5, lineDash: [2, 4] }) }),
   depart: new ol.style.Style({
     image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#000000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
   }),
