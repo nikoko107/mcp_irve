@@ -62,3 +62,30 @@ def test_pdf_affiche_les_distances_arrondies(patch_output_dir):
 
     assert f"{resultat.distance_vol_oiseau_m:.1f} m" in texte
     assert f"{resultat.distance_routiere_m:.1f} m" in texte
+
+
+def test_pdf_affiche_la_table_repartition_par_type_quand_non_vide(patch_output_dir):
+    state = build_state(eligible=True)
+    state.resultat.repartition_type_m = {
+        "Route à 1 chaussée": 120.5,
+        "Chemin": 30.0,
+    }
+
+    chemin = pdf_report.generer_rapport_pdf(state)
+    texte = _extract_text(chemin)
+
+    assert "Distance routière par type de voie" in texte
+    assert "Route à 1 chaussée" in texte
+    assert "Chemin" in texte
+    assert "120.5 m" in texte
+    assert "30.0 m" in texte
+
+
+def test_pdf_omet_la_table_repartition_par_type_quand_vide(patch_output_dir):
+    state = build_state(eligible=True)
+    assert state.resultat.repartition_type_m == {}
+
+    chemin = pdf_report.generer_rapport_pdf(state)
+    texte = _extract_text(chemin)
+
+    assert "Distance routière par type de voie" not in texte

@@ -17,6 +17,7 @@ from shapely.geometry import LineString
 
 from mcp_irve import pipeline
 from mcp_irve.errors import EtatManquantError, MCPIrveError
+from mcp_irve.geo import itineraire as itineraire_geo
 from mcp_irve.geo.projections import l93_to_wgs84
 from mcp_irve.models import Itineraire, PointGeo, ReseauSegment, RouteSegment
 from mcp_irve.state import Stage, get_state
@@ -117,6 +118,17 @@ async def test_sequence_complete_eligible(monkeypatch, patch_output_dir):
     assert resultat["distance_routiere_m"] == pytest.approx(150.0)
     assert state.resultat is not None
     assert state.resultat.eligible is True
+    # L'itinéraire mocké (fake_calculer_itineraire) ne longe route-1 (seul tronçon du
+    # réseau routier) que sur sa toute dernière portion (il rejoint le début de la
+    # route en ligne droite depuis le point de départ) : l'essentiel de sa longueur
+    # est donc non identifié, le reste attribué à la nature de route-1. On vérifie la
+    # présence des deux clés et que la somme couvre bien la longueur totale.
+    repartition = state.resultat.repartition_type_m
+    assert set(repartition.keys()) == {"Route à 1 chaussée", itineraire_geo.TYPE_NON_IDENTIFIE}
+    assert sum(repartition.values()) == pytest.approx(
+        state.resultat.itineraire.geometry.length, abs=1e-2
+    )
+    assert resultat["repartition_type_m"].keys() == repartition.keys()
 
     carte = pipeline.generer_carte(state)
     geojson = pipeline.exporter_geojson(state, "complet")
