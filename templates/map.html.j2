@@ -16,7 +16,8 @@
     --c-zone: #898781;        /* zone tampon d'accessibilité — gris neutre, pas une teinte de donnée */
     --c-routes: #595959;      /* réseau routier de contexte */
     --c-candidats: #008300;   /* tronçons candidats accessibles */
-    --c-resultat: #e34948;    /* tronçon retenu + point de raccordement */
+    --c-resultat: #e34948;    /* point de raccordement — le tronçon retenu n'a pas de
+                                  couleur dédiée, il reprend le style neutre par défaut */
     --c-itineraire: #4a3aa7;  /* itinéraire routier calculé (tracé projeté) */
     --c-poste: #eb6834;       /* poste de distribution */
   }
@@ -50,7 +51,6 @@
   <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-poste)"></span>Poste de distribution « P » <em>(en direct)</em></div>
   <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-routes)"></span>Routes / chemins</div>
   <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-candidats)"></span>Candidats accessibles</div>
-  <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-resultat); border-top-width:4px"></span>Tronçon retenu</div>
   <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-itineraire)"></span>Itinéraire routier (tracé projeté)</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:#000000"></span>Point d'analyse</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-resultat)"></span>Point de raccordement</div>
@@ -79,9 +79,10 @@ ol.proj.proj4.register(proj4);
 // de ce script aux variables CSS sans code additionnel. Teintes choisies et validées
 // (séparation daltonisme ΔE OKLab, contraste) pour rester distinguables entre elles :
 // bleu (réseau BT, la référence), vert (candidats), violet (itinéraire calculé),
-// rouge (tronçon retenu — l'entité la plus importante, distinguée aussi par une
-// épaisseur de trait supérieure). Le réseau routier de contexte et la zone tampon
-// restent en gris neutre, hors palette de données, pour ne pas rivaliser avec elles.
+// rouge (point de raccordement uniquement — le tronçon retenu n'a volontairement
+// pas de couleur dédiée : il reprend le style neutre par défaut de styleFunction,
+// seuls les points (départ, raccordement) portent une couleur). Le réseau routier
+// de contexte et la zone tampon restent en gris neutre, hors palette de données.
 const COULEUR_BT = '#2a78d6';
 const COULEUR_ZONE = '#898781';
 const COULEUR_ROUTES = '#595959';
@@ -101,9 +102,11 @@ const styleByLayer = {
   bt_souterrain: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_BT, width: 3, lineDash: [6, 4] }) }),
   routes: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ROUTES, width: 1.5 }) }),
   candidats: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_CANDIDATS, width: 3 }) }),
-  resultat: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_RESULTAT, width: 5 }) }),
+  // Pas d'entrée "resultat" : le tronçon retenu n'a volontairement pas de style
+  // dédié — il retombe sur le style neutre par défaut de styleFunction ci-dessous,
+  // seuls les points (départ, raccordement) sont mis en couleur.
   // "tracé projeté" (itinéraire routier calculé) : violet tireté, distinct du bleu du
-  // réseau BT et du rouge du tronçon retenu.
+  // réseau BT.
   itineraire: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ITINERAIRE, width: 3, lineDash: [2, 6] }) }),
   depart: new ol.style.Style({
     image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#000000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
