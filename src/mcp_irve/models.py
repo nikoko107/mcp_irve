@@ -65,6 +65,15 @@ class RankedCandidate:
     point_le_plus_proche: BaseGeometry  # Point, EPSG:2154 — projection du point de départ
     distance_vol_oiseau_m: float
     distance_routiere_m: float | None = None
+    """Distance totale départ -> réseau BT une fois calculée : itinéraire piéton
+    (départ -> point_le_plus_proche) + dernier tronçon (point_le_plus_proche -> câble BT,
+    voir distance_dernier_troncon_m). C'est cette distance totale qui sert au classement
+    du meilleur candidat et à la comparaison au seuil d'éligibilité."""
+    distance_dernier_troncon_m: float | None = None
+    """Distance à vol d'oiseau entre point_le_plus_proche (sur la route candidate) et le
+    point le plus proche du réseau BT réel — voir geo/candidates.py::distance_au_reseau_bt.
+    Toujours <= buffer_m par construction (le candidat est une portion de route incluse
+    dans le buffer autour du réseau BT)."""
 
 
 @dataclass
@@ -86,10 +95,19 @@ class Resultat:
     type: str
     distance_vol_oiseau_m: float
     distance_routiere_m: float
+    """Distance totale départ -> réseau BT : distance_itineraire_m + distance_dernier_troncon_m.
+    C'est cette distance totale (pas seulement le tronçon de voirie) qui est comparée au
+    seuil d'éligibilité — voir RankedCandidate.distance_routiere_m."""
     point_raccordement: PointGeo
     eligible: bool
     candidat: CandidateSegment
     itineraire: Itineraire | None = None
+    distance_itineraire_m: float = 0.0
+    """Distance piétonne (IGN) départ -> point_raccordement (sur la route candidate),
+    sans le dernier tronçon jusqu'au câble BT — équivaut à itineraire.distance_m."""
+    distance_dernier_troncon_m: float = 0.0
+    """Distance à vol d'oiseau point_raccordement -> câble BT le plus proche (le tronçon
+    non couvert par le réseau routier, <= buffer_m). Voir RankedCandidate."""
     repartition_type_m: dict[str, float] = field(default_factory=dict)
     """Longueur de l'itinéraire (mètres) par nature de voie traversée — voir
     geo/itineraire.py::repartir_longueur_par_type. Vide si l'itinéraire n'a pas de

@@ -115,18 +115,27 @@ async def test_sequence_complete_eligible(monkeypatch, patch_output_dir):
     resultat = await pipeline.selectionner_meilleur_candidat(state, None)
     assert state.stage is Stage.RESULTAT
     assert resultat["eligible"] is True
-    assert resultat["distance_routiere_m"] == pytest.approx(150.0)
+    assert resultat["distance_routiere_m"] == pytest.approx(155.0)
+    assert resultat["distance_itineraire_m"] == pytest.approx(150.0)
+    assert resultat["distance_dernier_troncon_m"] == pytest.approx(5.0)
     assert state.resultat is not None
     assert state.resultat.eligible is True
     # L'itinéraire mocké (fake_calculer_itineraire) ne longe route-1 (seul tronçon du
     # réseau routier) que sur sa toute dernière portion (il rejoint le début de la
     # route en ligne droite depuis le point de départ) : l'essentiel de sa longueur
-    # est donc non identifié, le reste attribué à la nature de route-1. On vérifie la
-    # présence des deux clés et que la somme couvre bien la longueur totale.
+    # est donc non identifié, le reste attribué à la nature de route-1. Le dernier
+    # tronçon route -> câble BT (5.0 m, à vol d'oiseau) forme un seau supplémentaire.
+    # On vérifie la présence des trois clés et que la somme couvre bien la longueur
+    # totale de l'itinéraire, plus ce dernier tronçon.
     repartition = state.resultat.repartition_type_m
-    assert set(repartition.keys()) == {"Route à 1 chaussée", itineraire_geo.TYPE_NON_IDENTIFIE}
+    assert set(repartition.keys()) == {
+        "Route à 1 chaussée",
+        itineraire_geo.TYPE_NON_IDENTIFIE,
+        itineraire_geo.RACCORDEMENT_RESEAU_BT,
+    }
+    assert repartition[itineraire_geo.RACCORDEMENT_RESEAU_BT] == pytest.approx(5.0)
     assert sum(repartition.values()) == pytest.approx(
-        state.resultat.itineraire.geometry.length, abs=1e-2
+        state.resultat.itineraire.geometry.length + 5.0, abs=1e-2
     )
     assert resultat["repartition_type_m"].keys() == repartition.keys()
 
@@ -156,7 +165,7 @@ async def test_sequence_complete_non_eligible(monkeypatch, patch_output_dir):
     resultat = await pipeline.selectionner_meilleur_candidat(state, None)
 
     assert resultat["eligible"] is False
-    assert resultat["distance_routiere_m"] == pytest.approx(250.0)
+    assert resultat["distance_routiere_m"] == pytest.approx(255.0)
     assert state.resultat.eligible is False
 
     pdf = pipeline.generer_rapport_pdf(state)

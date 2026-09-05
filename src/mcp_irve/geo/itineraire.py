@@ -25,6 +25,10 @@ from shapely.validation import make_valid
 from ..models import RouteSegment
 
 TYPE_NON_IDENTIFIE = "Autre / tronçon non identifié"
+RACCORDEMENT_RESEAU_BT = "Raccordement direct au réseau BT (hors voirie)"
+"""Étiquette du dernier tronçon (point_raccordement -> câble BT réel), ajoutée par
+pipeline.py à la répartition renvoyée par repartir_longueur_par_type — cette fonction
+ne couvre que l'itinéraire routier, pas ce tronçon hors voirie."""
 
 
 def repartir_longueur_par_type(

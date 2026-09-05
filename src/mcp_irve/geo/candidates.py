@@ -10,7 +10,7 @@ from __future__ import annotations
 from shapely.geometry import Point
 from shapely.ops import nearest_points
 
-from ..models import CandidateSegment, RankedCandidate
+from ..models import CandidateSegment, RankedCandidate, ReseauSegment
 
 
 def classer_candidats(
@@ -37,3 +37,13 @@ def selectionner_n_plus_proches(
     ranked: list[RankedCandidate], n: int
 ) -> list[RankedCandidate]:
     return ranked[:n]
+
+
+def distance_au_reseau_bt(point: Point, reseau_bt: list[ReseauSegment]) -> float:
+    """Distance à vol d'oiseau entre `point` (sur la route candidate) et le câble BT le
+    plus proche — le dernier tronçon non couvert par le réseau routier, entre la voirie
+    et le réseau électrique réel. Toujours <= buffer_m par construction : `point` est le
+    point le plus proche d'une route candidate, elle-même une portion incluse dans le
+    buffer `buffer_m` autour du réseau BT (voir geo/accessibility.py::filtrer_candidats).
+    """
+    return min(point.distance(seg.geometry) for seg in reseau_bt)

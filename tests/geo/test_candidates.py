@@ -1,10 +1,18 @@
 from pytest import approx
 from shapely.geometry import LineString, Point
 
-from mcp_irve.geo.candidates import classer_candidats, selectionner_n_plus_proches
-from mcp_irve.models import CandidateSegment
+from mcp_irve.geo.candidates import (
+    classer_candidats,
+    distance_au_reseau_bt,
+    selectionner_n_plus_proches,
+)
+from mcp_irve.models import CandidateSegment, ReseauSegment
 
 POINT_DEPART = Point(0, 0)
+
+
+def _reseau_segment(seg_id, geometry, type_="aerien"):
+    return ReseauSegment(id=seg_id, type=type_, geometry=geometry, attributes={})
 
 
 def _candidat(candidate_id, geometry):
@@ -75,3 +83,18 @@ def test_selectionner_n_plus_proches_n_superieur_a_la_taille_de_la_liste():
     selection = selectionner_n_plus_proches(ranked, 5)
 
     assert len(selection) == 1
+
+
+def test_distance_au_reseau_bt_un_seul_troncon():
+    point = Point(0, 0)
+    segment = _reseau_segment("bt-1", LineString([(5, -10), (5, 10)]))
+
+    assert distance_au_reseau_bt(point, [segment]) == approx(5.0)
+
+
+def test_distance_au_reseau_bt_retient_le_minimum_parmi_plusieurs_troncons():
+    point = Point(0, 0)
+    proche = _reseau_segment("bt-proche", LineString([(3, -10), (3, 10)]))
+    loin = _reseau_segment("bt-loin", LineString([(50, -10), (50, 10)]), type_="souterrain")
+
+    assert distance_au_reseau_bt(point, [loin, proche]) == approx(3.0)

@@ -81,6 +81,27 @@ def test_pdf_affiche_la_table_repartition_par_type_quand_non_vide(patch_output_d
     assert "30.0 m" in texte
 
 
+def test_pdf_affiche_le_detail_itineraire_et_dernier_troncon(patch_output_dir):
+    state = build_state(eligible=True)
+    state.resultat.distance_itineraire_m = 150.0
+    state.resultat.distance_dernier_troncon_m = 5.0
+    state.resultat.distance_routiere_m = 155.0
+
+    chemin = pdf_report.generer_rapport_pdf(state)
+    texte = _extract_text(chemin)
+
+    # Le libellé long "Distance routière totale (jusqu'au réseau BT)" est renvoyé sur
+    # deux lignes par pdfplumber (largeur de colonne) : on ne vérifie que le début,
+    # déjà distinctif et déjà couvert pour la valeur par
+    # test_pdf_affiche_les_distances_arrondies.
+    assert "Distance à pied jusqu'à la voirie" in texte
+    assert "Dernier tronçon (voirie -> réseau BT)" in texte
+    assert "Distance routière totale" in texte
+    assert "150.0 m" in texte
+    assert "5.0 m" in texte
+    assert "155.0 m" in texte
+
+
 def test_pdf_omet_la_table_repartition_par_type_quand_vide(patch_output_dir):
     state = build_state(eligible=True)
     assert state.resultat.repartition_type_m == {}
