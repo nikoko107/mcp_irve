@@ -18,7 +18,7 @@ from shapely.geometry import LineString
 from mcp_irve import pipeline
 from mcp_irve.errors import EtatManquantError, MCPIrveError
 from mcp_irve.geo import itineraire as itineraire_geo
-from mcp_irve.geo.projections import l93_to_wgs84
+from mcp_irve.geo.projections import l93_to_wgs84, wgs84_to_l93
 from mcp_irve.models import Itineraire, PointGeo, ReseauSegment, RouteSegment
 from mcp_irve.state import Stage, get_state
 
@@ -118,6 +118,17 @@ async def test_sequence_complete_eligible(monkeypatch, patch_output_dir):
     assert resultat["distance_dernier_troncon_m"] == pytest.approx(5.0)
     assert state.resultat is not None
     assert state.resultat.dans_perimetre_analyse is True
+    # point_raccordement doit être le point projeté sur BT_LINE (le câble BT réel), pas
+    # sur ROUTE_LINE (le point de route (650000.0, 6860000.0) renvoyé par l'itinéraire
+    # mocké) : la projection perpendiculaire de ce point sur BT_LINE tombe exactement
+    # sur (650000.0, 6860005.0).
+    point_raccordement_x, point_raccordement_y = wgs84_to_l93(
+        state.resultat.point_raccordement.lat, state.resultat.point_raccordement.lon
+    )
+    assert point_raccordement_x == pytest.approx(650000.0, abs=1e-3)
+    assert point_raccordement_y == pytest.approx(6860005.0, abs=1e-3)
+    assert state.resultat.point_raccordement.x_l93 == pytest.approx(650000.0, abs=1e-6)
+    assert state.resultat.point_raccordement.y_l93 == pytest.approx(6860005.0, abs=1e-6)
     # L'itinéraire mocké (fake_calculer_itineraire) ne longe route-1 (seul tronçon du
     # réseau routier) que sur sa toute dernière portion (il rejoint le début de la
     # route en ligne droite depuis le point de départ) : l'essentiel de sa longueur

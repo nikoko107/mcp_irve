@@ -47,3 +47,15 @@ def distance_au_reseau_bt(point: Point, reseau_bt: list[ReseauSegment]) -> float
     buffer `buffer_m` autour du réseau BT (voir geo/accessibility.py::filtrer_candidats).
     """
     return min(point.distance(seg.geometry) for seg in reseau_bt)
+
+
+def point_le_plus_proche_reseau_bt(point: Point, reseau_bt: list[ReseauSegment]) -> Point:
+    """Point le plus proche de `point` (sur la route candidate) sur le réseau BT réel —
+    c'est ce point, pas celui sur la route, qui constitue le `point_raccordement` final
+    (le point de raccordement est sur le câble électrique, pas sur la voirie). Cherche
+    d'abord le tronçon BT le plus proche (même critère que distance_au_reseau_bt), puis
+    projette dessus plutôt que d'unioniser tout le réseau BT à chaque appel.
+    """
+    segment_proche = min(reseau_bt, key=lambda seg: point.distance(seg.geometry))
+    _, point_proche = nearest_points(point, segment_proche.geometry)
+    return point_proche

@@ -138,14 +138,18 @@ async def selectionner_meilleur_candidat(
         assert best is not None
         best_candidate, best_itineraire = best
 
-        lat_pt, lon_pt = l93_to_wgs84(
-            best_candidate.point_le_plus_proche.x, best_candidate.point_le_plus_proche.y
+        # Le point de raccordement est le point sur le câble BT réel, pas sur la route :
+        # la route n'est qu'un point de passage pour l'itinéraire, le raccordement se
+        # fait physiquement sur le réseau électrique.
+        point_sur_reseau_bt = candidates.point_le_plus_proche_reseau_bt(
+            best_candidate.point_le_plus_proche, state.reseau_bt
         )
+        lat_pt, lon_pt = l93_to_wgs84(point_sur_reseau_bt.x, point_sur_reseau_bt.y)
         point_raccordement = PointGeo(
             lat=lat_pt,
             lon=lon_pt,
-            x_l93=best_candidate.point_le_plus_proche.x,
-            y_l93=best_candidate.point_le_plus_proche.y,
+            x_l93=point_sur_reseau_bt.x,
+            y_l93=point_sur_reseau_bt.y,
         )
         dans_perimetre_analyse = best_candidate.distance_routiere_m <= SETTINGS.perimetre_analyse_m
 

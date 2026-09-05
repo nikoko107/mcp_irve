@@ -4,6 +4,7 @@ from shapely.geometry import LineString, Point
 from mcp_irve.geo.candidates import (
     classer_candidats,
     distance_au_reseau_bt,
+    point_le_plus_proche_reseau_bt,
     selectionner_n_plus_proches,
 )
 from mcp_irve.models import CandidateSegment, ReseauSegment
@@ -98,3 +99,26 @@ def test_distance_au_reseau_bt_retient_le_minimum_parmi_plusieurs_troncons():
     loin = _reseau_segment("bt-loin", LineString([(50, -10), (50, 10)]), type_="souterrain")
 
     assert distance_au_reseau_bt(point, [loin, proche]) == approx(3.0)
+
+
+def test_point_le_plus_proche_reseau_bt_un_seul_troncon():
+    point = Point(0, 0)
+    segment = _reseau_segment("bt-1", LineString([(5, -10), (5, 10)]))
+
+    point_proche = point_le_plus_proche_reseau_bt(point, [segment])
+
+    assert point_proche.x == approx(5.0)
+    assert point_proche.y == approx(0.0)
+
+
+def test_point_le_plus_proche_reseau_bt_retient_le_troncon_le_plus_proche():
+    point = Point(0, 0)
+    proche = _reseau_segment("bt-proche", LineString([(3, -10), (3, 10)]))
+    loin = _reseau_segment("bt-loin", LineString([(50, -10), (50, 10)]), type_="souterrain")
+
+    point_proche = point_le_plus_proche_reseau_bt(point, [loin, proche])
+
+    # Le point projeté doit provenir du tronçon "proche" (x=3), pas du tronçon "loin"
+    # (x=50), même si celui-ci est passé en premier dans la liste.
+    assert point_proche.x == approx(3.0)
+    assert point_proche.y == approx(0.0)

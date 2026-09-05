@@ -127,6 +127,37 @@ def test_export_niveau_resultat_contient_acces_voirie_quand_distance_non_nulle(p
         _assert_wgs84_plausible(lon, lat)
 
 
+def test_export_niveau_resultat_omet_raccordement_reseau_bt_quand_distance_nulle(
+    patch_output_dir,
+):
+    state = build_state(with_layers=True)
+    assert state.resultat.distance_dernier_troncon_m == 0.0
+
+    chemin = geojson_export.exporter_geojson(state, "resultat")
+    data = json.loads(chemin.read_text())
+
+    layers = {f["properties"]["layer"] for f in data["features"]}
+    assert "raccordement_reseau_bt" not in layers
+
+
+def test_export_niveau_resultat_contient_raccordement_reseau_bt_quand_distance_non_nulle(
+    patch_output_dir,
+):
+    state = build_state(with_layers=True)
+    state.resultat.distance_dernier_troncon_m = 5.0
+
+    chemin = geojson_export.exporter_geojson(state, "resultat")
+    data = json.loads(chemin.read_text())
+
+    raccordement_feature = next(
+        f for f in data["features"] if f["properties"]["layer"] == "raccordement_reseau_bt"
+    )
+    assert raccordement_feature["geometry"]["type"] == "LineString"
+    assert raccordement_feature["properties"]["distance_m"] == 5.0
+    for lon, lat in _iter_all_coords(raccordement_feature["geometry"]):
+        _assert_wgs84_plausible(lon, lat)
+
+
 def test_export_proprietes_resultat_portent_les_bonnes_valeurs(patch_output_dir):
     state = build_state(with_layers=False, eligible=False)
 

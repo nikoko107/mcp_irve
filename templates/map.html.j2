@@ -53,8 +53,9 @@
   <div class="entry"><span class="swatch swatch-line" style="border-color:var(--c-candidats)"></span>Candidats accessibles</div>
   <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-itineraire)"></span>Itinéraire routier (tracé projeté)</div>
   <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-zone)"></span>Accès à la voirie (point d'analyse -&gt; route)</div>
+  <div class="entry"><span class="swatch swatch-line-dashed" style="border-color:var(--c-zone)"></span>Raccordement au réseau BT (route -&gt; câble)</div>
   <div class="entry"><span class="swatch swatch-dot" style="background:#000000"></span>Point d'analyse</div>
-  <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-resultat)"></span>Point de raccordement</div>
+  <div class="entry"><span class="swatch swatch-dot" style="background:var(--c-resultat)"></span>Point de raccordement (sur le câble BT)</div>
   {% if dans_perimetre_analyse is not none %}
   <div class="statut">{% if dans_perimetre_analyse %}✅ Dans le périmètre d'analyse{% else %}⚠️ Hors périmètre d'analyse{% endif %} — {{ distance_routiere_m }} m (périmètre {{ perimetre_m }} m)</div>
   {% endif %}
@@ -113,6 +114,9 @@ const styleByLayer = {
   // pris comme origine par l'itinéraire IGN — gris neutre fin, un simple repère
   // technique, pas une entité de données au même titre que le réseau ou l'itinéraire.
   acces_voirie: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ZONE, width: 1.5, lineDash: [2, 4] }) }),
+  // Dernier tronçon : point de route -> point_raccordement (sur le câble BT réel, pas
+  // sur la route) — même traitement neutre que acces_voirie, symétrique à l'autre bout.
+  raccordement_reseau_bt: new ol.style.Style({ stroke: new ol.style.Stroke({ color: COULEUR_ZONE, width: 1.5, lineDash: [2, 4] }) }),
   depart: new ol.style.Style({
     image: new ol.style.Circle({ radius: 7, fill: new ol.style.Fill({ color: '#000000' }), stroke: new ol.style.Stroke({ color: '#fff', width: 2 }) }),
   }),

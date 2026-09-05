@@ -101,6 +101,23 @@ def test_carte_html_embarque_acces_voirie_quand_premier_troncon_non_nul(patch_ou
     assert acces_voirie_feature["properties"]["distance_m"] == 5.0
 
 
+def test_carte_html_embarque_raccordement_reseau_bt_quand_dernier_troncon_non_nul(
+    patch_output_dir,
+):
+    state = build_state(with_layers=True)
+    state.resultat.distance_dernier_troncon_m = 5.0
+
+    chemin = map_output.generer_carte_html(state)
+    html = chemin.read_text(encoding="utf-8")
+
+    geojson = _extract_embedded_geojson(html)
+    raccordement_feature = next(
+        f for f in geojson["features"] if f["properties"]["layer"] == "raccordement_reseau_bt"
+    )
+    assert raccordement_feature["geometry"]["type"] == "LineString"
+    assert raccordement_feature["properties"]["distance_m"] == 5.0
+
+
 def test_carte_html_echappe_les_scripts_dans_ladresse(patch_output_dir):
     payload = "</script><script>alert(1)</script>"
     state = build_state(with_layers=False, adresse=f"1 rue Test {payload}")

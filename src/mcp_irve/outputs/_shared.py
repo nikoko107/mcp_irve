@@ -134,5 +134,21 @@ def construire_features(
                         {"distance_m": round(resultat.distance_premier_troncon_m, 1)},
                     )
                 )
+            # point_raccordement est sur le câble BT, pas sur la route (voir models.py) :
+            # ce petit tronçon rend visible le dernier segment, non couvert par le réseau
+            # routier, entre le point de route (dernier point de itineraire.geometry) et
+            # le point de raccordement réel sur le réseau électrique.
+            if resultat.distance_dernier_troncon_m > 1e-6:
+                dernier_point_route = Point(resultat.itineraire.geometry.coords[-1])
+                point_bt = Point(
+                    resultat.point_raccordement.x_l93, resultat.point_raccordement.y_l93
+                )
+                features.append(
+                    _feature(
+                        LineString([dernier_point_route, point_bt]),
+                        "raccordement_reseau_bt",
+                        {"distance_m": round(resultat.distance_dernier_troncon_m, 1)},
+                    )
+                )
 
     return features
